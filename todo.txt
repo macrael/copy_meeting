@@ -1,11 +1,11 @@
-* auth
-	* read creds from config file
-	* generate jwt
-	* insert into header
-* make request
-* copy to clipboard
-* make a service
-
+x auth
+	x read creds from config file
+	x generate jwt
+	x insert into header
+x make request
+x make a service
+	x copy to clipboard
+	x play a sound
 
 Copy Meeting
 
