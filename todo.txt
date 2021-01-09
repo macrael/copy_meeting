@@ -1,0 +1,12 @@
+* auth
+	* read creds from config file
+	* generate jwt
+	* insert into header
+* make request
+* copy to clipboard
+* make a service
+
+
+Copy Meeting
+
+a script, meant to be invoked as an OS X service that hits the zoom API, generates a meeting url, and copies it to the clipboard. 
