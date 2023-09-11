@@ -2,14 +2,19 @@
 import http.client
 import jwt
 import json
+import requests
 from datetime import datetime, timedelta
 
 from typing import NamedTuple, Dict, Union, cast
 
-API_KEY_KEY = 'api_key'
-API_SECRET_KEY = 'api_secret'
+ACCOUNT_ID_KEY = 'account_id'
+CLIENT_ID_KEY = 'client_id'
+CLIENT_SECRET_KEY = 'client_secret'
 
-Creds = NamedTuple('Creds', [('key', str), ('secret', str)])
+AUTH_TOKEN_URL = 'https://zoom.us/oauth/token'
+API_BASE_URL = 'https://api.zoom.us/v2'
+
+Creds = NamedTuple('Creds', [('account_id', str), ('client_id', str), ('client_secret', str)])
 
 def read_credentails() -> Creds:
 	raw_creds: Dict[str, str] = {}
@@ -18,56 +23,73 @@ def read_credentails() -> Creds:
 			(key, value) = line.strip().split('=')
 			raw_creds[key] = value
 
-	key = raw_creds[API_KEY_KEY]
-	secret = raw_creds[API_SECRET_KEY]
+	account_id = raw_creds[ACCOUNT_ID_KEY]
+	client_id = raw_creds[CLIENT_ID_KEY]
+	client_secret = raw_creds[CLIENT_SECRET_KEY]
 
-	return Creds(key, secret)
+	return Creds(account_id, client_id, client_secret)
 
-def generate_jwt(key: str, secret: str) -> str:
-	expirey = datetime.utcnow() + timedelta(minutes=2)
-	unix_expiry = expirey.strftime('%s')
+def get_authorized_creds(app_creds: Creds) -> str: 
 
-	payload: Dict[str, str] = {'iss': key, 'exp': unix_expiry}
-
-	encoded_jwt = jwt.encode(payload, secret, algorithm='HS256')
-
-	return encoded_jwt
-
-
-def new_meeting_request(valid_jwt: str, user_id: str) -> str:
-	conn = http.client.HTTPSConnection('api.zoom.us')
-
-	headers = {
-		'authorization': f'Bearer {valid_jwt}',
-		'content-type': 'application/json'
+	auth_params: Dict[str, Union[str, Dict[str, bool]]] = {
+		"grant_type": "account_credentials",
+		"account_id": app_creds.account_id,
+		"client_secret": app_creds.client_secret
 	}
 
-	# by resquesting {} we just use all the defaults. 
-	# type would shift from 90 days to 365
-	# topic would rename it
-	create_params: Dict[str, Union[str, Dict[str, bool]]] = {
+	response = requests.post(AUTH_TOKEN_URL, 
+                                 auth=(app_creds.client_id, app_creds.client_secret), 
+                                 data=auth_params)
+
+	if response.status_code!=200:
+		print(response.text)
+		raise Exception('Unable to get access token')
+
+	print(response)
+
+	response_data: Dict[str, str] = response.json()
+	access_token = response_data['access_token']
+
+	if not access_token:
+		print(response.text)
+		raise Exception('No token provided')
+
+	return access_token
+
+def create_new_meeting_url(access_token: str) -> str:
+
+	headers = {
+		"Authorization": f"Bearer {access_token}",
+		"Content-Type": "application/json"
+	}
+	meeting_args = {
 		'topic': 'MacRae\'s Zoom Meeting',
-		'schedule_for': 'macrae@truss.works',
+		'schedule_for': 'macrae.linton@gmail.com',
+		# 'start_time': f'{start_date}T10:{start_time}',
+		# "type": 2
 		'settings': {
 			'use_pmi': False,
 		}
 	}
 
-	conn.request('POST', f'/v2/users/{user_id}/meetings', body=json.dumps(create_params), headers=headers)
+	resp = requests.post(f"{API_BASE_URL}/users/me/meetings", 
+										headers=headers, 
+										json=meeting_args)
 
-	res = conn.getresponse()
-	data_json = res.read().decode('utf-8')
-	# print("GOOO", data_json)
+	if resp.status_code!=201:
+		print(resp.text)
+		raise Exception('Unable to create meeting')
 
-	data: Dict[str, Union[str, int]] = json.loads(data_json)
-	# print('GOT', data)
+	payload: Dict[str,str] = resp.json()
+	print(payload)
 
-	return cast(str, data['join_url'])
+	join_url = payload['join_url']
 
+	return join_url
 
 if __name__ == '__main__':
-	key, secret = read_credentails()
-	new_jwt = generate_jwt(key, secret)
-	join_url = new_meeting_request(new_jwt, 'macrae@truss.works')
+	app_creds = read_credentails()
+	req_creds = get_authorized_creds(app_creds)
+	new_url = create_new_meeting_url(req_creds)
 
-	print(join_url)
+	print(new_url)
