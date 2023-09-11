@@ -24,7 +24,7 @@ def read_credentails() -> Creds:
 	return Creds(key, secret)
 
 def generate_jwt(key: str, secret: str) -> str:
-	expirey = datetime.utcnow() + timedelta(minutes=15)
+	expirey = datetime.utcnow() + timedelta(minutes=2)
 	unix_expiry = expirey.strftime('%s')
 
 	payload: Dict[str, str] = {'iss': key, 'exp': unix_expiry}
@@ -34,7 +34,7 @@ def generate_jwt(key: str, secret: str) -> str:
 	return encoded_jwt
 
 
-def new_meeting_request(valid_jwt: str) -> str:
+def new_meeting_request(valid_jwt: str, user_id: str) -> str:
 	conn = http.client.HTTPSConnection('api.zoom.us')
 
 	headers = {
@@ -45,13 +45,22 @@ def new_meeting_request(valid_jwt: str) -> str:
 	# by resquesting {} we just use all the defaults. 
 	# type would shift from 90 days to 365
 	# topic would rename it
+	create_params: Dict[str, Union[str, Dict[str, bool]]] = {
+		'topic': 'MacRae\'s Zoom Meeting',
+		'schedule_for': 'macrae@truss.works',
+		'settings': {
+			'use_pmi': False,
+		}
+	}
 
-	conn.request('POST', '/v2/users/me/meetings', body='{}', headers=headers)
+	conn.request('POST', f'/v2/users/{user_id}/meetings', body=json.dumps(create_params), headers=headers)
 
 	res = conn.getresponse()
 	data_json = res.read().decode('utf-8')
+	# print("GOOO", data_json)
 
 	data: Dict[str, Union[str, int]] = json.loads(data_json)
+	# print('GOT', data)
 
 	return cast(str, data['join_url'])
 
@@ -59,6 +68,6 @@ def new_meeting_request(valid_jwt: str) -> str:
 if __name__ == '__main__':
 	key, secret = read_credentails()
 	new_jwt = generate_jwt(key, secret)
-	join_url = new_meeting_request(new_jwt)
+	join_url = new_meeting_request(new_jwt, 'macrae@truss.works')
 
 	print(join_url)

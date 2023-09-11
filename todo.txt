@@ -6,7 +6,28 @@ x make request
 x make a service
 	x copy to clipboard
 	x play a sound
+x BUG: I'm not the host and host key is wrong
+	x had to make the meeting from my userid : POST users/macrae@truss/meeting instead of making it in the admin account
+x change jwt expiration to 2 minutes
+* read macrae@truss.works from somehwere
+	* either put it in creds
+		* this feels better. Hiding that we are really able to do whatever we want with these creds.
+	* or pass it in as an arg
+* run it outside of shell
+	* maybe that's a little shell script that invokes the thing
+	* creds live outside of /code
+* error if creds isn't full
+* error if anything fails
+* might be nice to have a self-dismissing alert for visual communication of work
+* instrructions for setting up
+	* incoude you have to activate your "app"
 
 Copy Meeting
 
 a script, meant to be invoked as an OS X service that hits the zoom API, generates a meeting url, and copies it to the clipboard. 
+
+UGH
+
+the creds are admin creds
+feels like I shouldn't have them
+BUT if you go OAuth, the app needs to checkin every X minutes to refresh the jwt. lame. 
