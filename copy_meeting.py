@@ -45,8 +45,6 @@ def get_authorized_creds(app_creds: Creds) -> str:
 		print(response.text)
 		raise Exception('Unable to get access token')
 
-	print(response)
-
 	response_data: Dict[str, str] = response.json()
 	access_token = response_data['access_token']
 
@@ -64,7 +62,7 @@ def create_new_meeting_url(access_token: str) -> str:
 	}
 	meeting_args = {
 		'topic': 'MacRae\'s Zoom Meeting',
-		'schedule_for': 'macrae.linton@gmail.com',
+		# 'schedule_for': 'macrae@truss.works',
 		# 'start_time': f'{start_date}T10:{start_time}',
 		# "type": 2
 		'settings': {
@@ -81,7 +79,6 @@ def create_new_meeting_url(access_token: str) -> str:
 		raise Exception('Unable to create meeting')
 
 	payload: Dict[str,str] = resp.json()
-	print(payload)
 
 	join_url = payload['join_url']
 
