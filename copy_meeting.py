@@ -29,7 +29,7 @@ def read_credentails() -> Creds:
 
 	return Creds(account_id, client_id, client_secret)
 
-def get_authorized_creds(app_creds: Creds) -> str: 
+def get_authorized_creds(app_creds: Creds) -> str:
 
 	auth_params: Dict[str, Union[str, Dict[str, bool]]] = {
 		"grant_type": "account_credentials",
@@ -37,8 +37,8 @@ def get_authorized_creds(app_creds: Creds) -> str:
 		"client_secret": app_creds.client_secret
 	}
 
-	response = requests.post(AUTH_TOKEN_URL, 
-                                 auth=(app_creds.client_id, app_creds.client_secret), 
+	response = requests.post(AUTH_TOKEN_URL,
+                                 auth=(app_creds.client_id, app_creds.client_secret),
                                  data=auth_params)
 
 	if response.status_code!=200:
@@ -70,8 +70,8 @@ def create_new_meeting_url(access_token: str) -> str:
 		}
 	}
 
-	resp = requests.post(f"{API_BASE_URL}/users/me/meetings", 
-										headers=headers, 
+	resp = requests.post(f"{API_BASE_URL}/users/me/meetings",
+										headers=headers,
 										json=meeting_args)
 
 	if resp.status_code!=201:
